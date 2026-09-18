@@ -2,15 +2,15 @@ import numpy as np
 import cirq
 import matplotlib.pyplot as plt
 
-from Functions import TrotterStep
+from Functions import TrotterStepCZ
 
-Number_of_Fock_States = 10
+Number_of_Fock_States = 6
 Number_of_Bosonic_Modes = 1
-Time= 0.5
-Timesteps=100
-Number_of_Shots = 500
+Time= 0.7
+Timesteps=40
+Number_of_Shots = 5000
 
-Trotter_circuit, qubits = TrotterStep(Number_of_Fock_States, Number_of_Bosonic_Modes, Time)
+Trotter_circuit, qubits = TrotterStepCZ(Number_of_Fock_States, Number_of_Bosonic_Modes, Time)
 print(Trotter_circuit)
 
 All_Results = []
@@ -18,9 +18,14 @@ for i in range(1, Timesteps+1):
     circuit = cirq.Circuit()
     for j in range(Number_of_Bosonic_Modes):
         circuit.append(cirq.X(qubits[j*Number_of_Fock_States]))
+    for j in range(Number_of_Bosonic_Modes):
+            circuit.append(cirq.H(qubits[Number_of_Bosonic_Modes*Number_of_Fock_States+j]))
     circuit.append([Trotter_circuit]*i)
+    for j in range(Number_of_Bosonic_Modes):
+                circuit.append(cirq.H(qubits[Number_of_Bosonic_Modes*Number_of_Fock_States+j]))
     circuit.append(cirq.measure(*qubits, key='m'))
-    # print(circuit)
+    if i == 3:
+          print(circuit)
     Full_Results = cirq.Simulator().run(circuit, repetitions=Number_of_Shots).measurements['m']
     # print(Full_Results) # shape = (repetitions, Number of Qubits).
     Averaged_Results = Full_Results.mean(axis=0)
@@ -44,10 +49,16 @@ plt.figure()
 for i in range(Number_of_Bosonic_Modes):
     plt.plot(Time_Data, All_Results[:,i], label = f'Mode {i}')
 plt.legend()
+plt.title(f'N={Number_of_Fock_States}, L={Number_of_Bosonic_Modes}, Trotter time ={Time}, Shots={Number_of_Shots}')
+plt.ylabel('Average Bosonic occupation number')
+plt.xlabel('Time')
 
 plt.figure()
 for i in range(Number_of_Bosonic_Modes):
     plt.plot(Time_Data, All_Results[:,i+Number_of_Bosonic_Modes], label = f'Spin {i}')
 plt.legend()
+plt.title(f'N={Number_of_Fock_States}, L={Number_of_Bosonic_Modes}, Trotter time ={Time}, Shots={Number_of_Shots}')
+plt.ylabel('Average Spin state')
+plt.xlabel('Time')
 
 plt.show()
