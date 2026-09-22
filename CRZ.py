@@ -4,23 +4,21 @@ import matplotlib.pyplot as plt
 from qutip import about, basis, tensor, destroy, mcsolve, mesolve, expect, qeye, sigmax, sigmay, sigmaz, fock, wigner, coherent
 from scipy.optimize import minimize_scalar
 
-from Functions import TrotterStepCZ, QutipHamiltonian, find_optimal_SpinBosonInteractionCoefficent
+from Functions import TrotterStepCRZ, QutipHamiltonian
 
-Number_of_Fock_States = 10
+Number_of_Fock_States = 15
 Number_of_Bosonic_Modes = 1
 Displacement_Coefficent = 1
 Spin_Interaction_Coefficent = 1
 Spin_Boson_Interaction_Coefficent = Displacement_Coefficent * (Number_of_Fock_States -0.5)**0.5
 
-Time= 0.1
-Timesteps=200
+Time= np.pi/(2*Displacement_Coefficent*(Number_of_Fock_States-0.5)**0.5)
+Timesteps=40
 Number_of_Shots = 2000
 
 #---Qutip Sim---#
 
 Qutip_Time = Time * Timesteps
-
-# SpinBosonInteractionCoefficent= find_optimal_SpinBosonInteractionCoefficent(Number_of_Bosonic_Modes, Number_of_Fock_States, 1, 1)
 
 state_list = [tensor(basis(2,0),fock(Number_of_Fock_States,0)) for _ in range(Number_of_Bosonic_Modes)]       # Tensor product of spin and boson vectors in ground state at each lattice point in a list 
 psi0 = tensor(state_list)                                           # Tensor product of all entries in the list
@@ -35,20 +33,10 @@ states = result.states
 exp_n = np.array([expect(n_list[i], states) for i in range(Number_of_Bosonic_Modes)])
 exp_sz = np.array([expect(sz_list[i], states) for i in range(Number_of_Bosonic_Modes)])
 
-""" plt.figure()
-for i in range(Number_of_Bosonic_Modes):
-    plt.plot(Qutip_Time_Data, exp_n[i])
-
-plt.figure()
-for i in range(Number_of_Bosonic_Modes):
-    plt.plot(Qutip_Time_Data, -(exp_sz[i]-1)/2)
-
-plt.show() """
-
 
 #---Cirq Sim---#
 
-Trotter_circuit, qubits = TrotterStepCZ(Number_of_Fock_States, Number_of_Bosonic_Modes, Time)
+Trotter_circuit, qubits = TrotterStepCRZ(Number_of_Fock_States, Number_of_Bosonic_Modes, Time, Displacement_Coefficent, Spin_Interaction_Coefficent, Spin_Boson_Interaction_Coefficent)
 print(Trotter_circuit)
 
 All_Results = []
@@ -88,7 +76,7 @@ for i in range(Number_of_Bosonic_Modes):
     plt.plot(Qutip_Time_Data, exp_n[i])
     plt.scatter(Time_Data, All_Results[:,i], label = f'Mode {i}')
 plt.legend()
-plt.title(f'N={Number_of_Fock_States}, L={Number_of_Bosonic_Modes}, Trotter time ={Time}, Shots={Number_of_Shots}')
+plt.title(f'N={Number_of_Fock_States}, L={Number_of_Bosonic_Modes}, Trotter time ={Time:.2f}, Shots={Number_of_Shots}')
 plt.ylabel('Average Bosonic occupation number')
 plt.xlabel('Time')
 
@@ -97,7 +85,7 @@ for i in range(Number_of_Bosonic_Modes):
     plt.plot(Qutip_Time_Data, -(exp_sz[i]-1)/2)
     plt.scatter(Time_Data, All_Results[:,i+Number_of_Bosonic_Modes], label = f'Spin {i}')
 plt.legend()
-plt.title(f'N={Number_of_Fock_States}, L={Number_of_Bosonic_Modes}, Trotter time ={Time}, Shots={Number_of_Shots}')
+plt.title(f'N={Number_of_Fock_States}, L={Number_of_Bosonic_Modes}, Trotter time ={Time:.2f}, Shots={Number_of_Shots}')
 plt.ylabel('Average Spin state')
 plt.xlabel('Time')
 
