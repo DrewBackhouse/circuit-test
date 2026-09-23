@@ -2,7 +2,6 @@ import numpy as np
 import cirq
 import matplotlib.pyplot as plt
 from qutip import about, basis, tensor, destroy, mcsolve, mesolve, expect, qeye, sigmax, sigmay, sigmaz, fock, wigner, coherent
-from scipy.optimize import minimize_scalar
 
 from Functions import TrotterStepCRZ, QutipHamiltonian
 
@@ -13,26 +12,20 @@ Spin_Interaction_Coefficent = 1
 Spin_Boson_Interaction_Coefficent = Displacement_Coefficent * (Number_of_Fock_States -0.5)**0.5
 
 Time= np.pi/(2*Displacement_Coefficent*(Number_of_Fock_States-0.5)**0.5)
-Timesteps=40
+Timesteps=80
 Number_of_Shots = 2000
 
 #---Qutip Sim---#
 
 Qutip_Time = Time * Timesteps
-
 state_list = [tensor(basis(2,0),fock(Number_of_Fock_States,0)) for _ in range(Number_of_Bosonic_Modes)]       # Tensor product of spin and boson vectors in ground state at each lattice point in a list 
 psi0 = tensor(state_list)                                           # Tensor product of all entries in the list
 Qutip_Time_Data = np.linspace(0, Qutip_Time, int(Qutip_Time*10))
-
 H, n_list, sz_list = QutipHamiltonian(Number_of_Bosonic_Modes, Number_of_Fock_States, Displacement_Coefficent, Spin_Interaction_Coefficent, Spin_Boson_Interaction_Coefficent)
-
 result = mesolve(H, psi0, Qutip_Time_Data, args={'Displacement_Coefficent': Displacement_Coefficent, 'Spin_Interaction_Coefficent': Spin_Interaction_Coefficent, 'Spin_Boson_Interaction_Coefficent': Spin_Boson_Interaction_Coefficent})
 states = result.states
-
-# Calculate expectation values
 exp_n = np.array([expect(n_list[i], states) for i in range(Number_of_Bosonic_Modes)])
 exp_sz = np.array([expect(sz_list[i], states) for i in range(Number_of_Bosonic_Modes)])
-
 
 #---Cirq Sim---#
 
@@ -66,10 +59,7 @@ for i in range(1, Timesteps+1):
     print(f'timestep {i} complete')
 
 All_Results = np.array(All_Results)
-print(All_Results)
-
 Time_Data = np.linspace(Time, Time*Timesteps, Timesteps)
-# print(Time_Data)
 
 plt.figure()
 for i in range(Number_of_Bosonic_Modes):
